@@ -13,10 +13,11 @@ class P {
 
 class Room {
   final String pw;
+  final int max; // odadaki en fazla oyuncu; 0 = sinirsiz (oda sahibi premium)
   final ps = <P>[];
   bool started = false;
   int next = 1;
-  Room(this.pw);
+  Room(this.pw, this.max);
 }
 
 final rooms = <String, Room>{};
@@ -59,7 +60,8 @@ void handle(WebSocket ws) {
           send(ws, {'t': 'err', 'msg': 'Bu oda adı kullanılıyor'});
           break;
         }
-        final r1 = Room('${m['pass']}');
+        final mx = int.tryParse('${m['max']}') ?? 0;
+        final r1 = Room('${m['pass']}', mx < 0 ? 0 : mx);
         rooms[key] = r1;
         rm = r1;
         me = P(ws, uniqueName(r1, m['name']))..host = true;
@@ -70,6 +72,10 @@ void handle(WebSocket ws) {
         final r2 = rooms['${m['room']}'.trim().toLowerCase()];
         if (r2 == null || r2.pw != '${m['pass']}') {
           send(ws, {'t': 'err', 'msg': 'Oda adı veya şifre yanlış'});
+          break;
+        }
+        if (r2.max > 0 && r2.ps.length >= r2.max) {
+          send(ws, {'t': 'err', 'msg': 'Oda dolu: normal pakette odaya en fazla ${r2.max} kişi girebilir'});
           break;
         }
         if (r2.started) {
