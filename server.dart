@@ -31,6 +31,20 @@ void bc(Room r) {
   for (final p in r.ps) send(p.ws, m);
 }
 
+// Oyuncunun yazdigi ad; bos ise "Oyuncu N", odada ayni ad varsa sonuna sayi eklenir.
+String uniqueName(Room r, Object? raw) {
+  var base = '${raw ?? ''}'.trim();
+  if (base.length > 16) base = base.substring(0, 16);
+  if (base.isEmpty) base = 'Oyuncu ${r.next++}';
+  var n = base;
+  var k = 2;
+  while (r.ps.any((p) => p.name == n)) {
+    n = '$base $k';
+    k++;
+  }
+  return n;
+}
+
 void handle(WebSocket ws) {
   print('Yeni oyuncu baglandi');
   ws.pingInterval = const Duration(seconds: 30); // baglanti canli kalsin
@@ -48,7 +62,7 @@ void handle(WebSocket ws) {
         final r1 = Room('${m['pass']}');
         rooms[key] = r1;
         rm = r1;
-        me = P(ws, 'Oyuncu ${r1.next++}')..host = true;
+        me = P(ws, uniqueName(r1, m['name']))..host = true;
         r1.ps.add(me!);
         send(ws, {'t': 'joined', 'code': '${m['room']}'.trim(), 'host': true, 'you': me!.name});
         bc(r1);
@@ -63,7 +77,7 @@ void handle(WebSocket ws) {
           break;
         }
         rm = r2;
-        me = P(ws, 'Oyuncu ${r2.next++}');
+        me = P(ws, uniqueName(r2, m['name']));
         r2.ps.add(me!);
         send(ws, {'t': 'joined', 'code': '${m['room']}'.trim(), 'host': false, 'you': me!.name});
         bc(r2);
