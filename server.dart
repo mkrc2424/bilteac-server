@@ -107,6 +107,7 @@ void handle(WebSocket ws) {
           if (!who.host) break; // oyunu sadece oda sahibi baslatabilir
           r5.started = true; // oyun sirasinda yeni oyuncu katilamasin
         }
+        if (m['k'] == 'end' && who.host) r5.started = false; // oyun bitti: oda yeni oyuncu ve yeni oyun icin acilir
         final out = {...m, 'from': who.name};
         for (final p in r5.ps) {
           if (p != who) send(p.ws, out);
@@ -166,7 +167,7 @@ Future<void> main(List<String> args) async {
   } catch (_) {
     print('Uyari: otomatik bulma (UDP 8081) acilamadi.');
   }
-  print('Bilteac sunucusu calisiyor. Digerleri tarayicidan su adreslerden girebilir:');
+  print('Bilteach sunucusu calisiyor. Digerleri tarayicidan su adreslerden girebilir:');
   for (final ni in await NetworkInterface.list(type: InternetAddressType.IPv4)) {
     for (final a in ni.addresses) {
       if (!a.isLoopback) print('  http://${a.address}:$port');
